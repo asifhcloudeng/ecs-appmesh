@@ -5,20 +5,6 @@ variable "nginx_image" {
   default     = "381492111475.dkr.ecr.ap-northeast-1.amazonaws.com/hello-world:latest"
 }
 
-variable "ecr_repository_uri_for_example1" {
-  description = "ECR repository URI for example1"
-  type        = string
-  default     = "your_ecr_image_uri_for_example1"  # Replace with the actual ECR URI for example1
-}
-
-variable "ecr_repository_uri_for_example2" {
-  description = "ECR repository URI for example2"
-  type        = string
-  default     = "your_ecr_image_uri_for_example2"  # Replace with the actual ECR URI for example2
-}
-
-# ... (previous code)
-
 # ECS Resources
 resource "aws_ecs_cluster" "example" {
   name = "example"
@@ -43,6 +29,13 @@ resource "aws_security_group" "nginx" {
     protocol         = "-1"
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
+  }
+}
+
+data "template_file" "container_definition_examplegw" {
+  template = file("./container_definitions/examplegw.tpl")
+  vars = {
+    appmesh_virtual_node_name = "mesh/${aws_appmesh_mesh.example.name}/virtualGateway/${aws_appmesh_virtual_gateway.example.name}"
   }
 }
 
@@ -85,102 +78,6 @@ resource "aws_ecs_service" "examplegw" {
 
   service_registries {
     registry_arn = aws_service_discovery_service.examplegw.arn
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.example.arn
-    container_name   = "nginx-container"
-    container_port   = 80
-  }
-}
-
-resource "aws_ecs_task_definition" "example1" {
-  family                   = "example1"
-  cpu                      = "8192"
-  memory                   = "16384"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  task_role_arn            = module.ecs_task_role.iam_role_arn
-  execution_role_arn       = module.ecs_task_execution_role.iam_role_arn
-  container_definitions    = jsonencode([{
-    name  = "nginx-container"
-    image = "${var.ecr_repository_uri_for_example1}:latest"
-    portMappings = [
-      {
-        containerPort = 80,
-        hostPort      = 80,
-      },
-    ]
-    # ... (other container settings) ...
-  }])
-}
-
-resource "aws_ecs_service" "example1" {
-  name                              = "example1"
-  cluster                           = aws_ecs_cluster.example.arn
-  task_definition                   = aws_ecs_task_definition.example1.arn
-  desired_count                     = 1
-  launch_type                       = "FARGATE"
-  platform_version                  = "1.4.0"
-  health_check_grace_period_seconds = 60
-
-  network_configuration {
-    assign_public_ip = false
-    security_groups  = [aws_security_group.nginx.id]
-
-    subnets = module.vpc.private_subnets
-  }
-
-  service_registries {
-    registry_arn = aws_service_discovery_service.example1.arn
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.example.arn
-    container_name   = "nginx-container"
-    container_port   = 80
-  }
-}
-
-resource "aws_ecs_task_definition" "example2" {
-  family                   = "example2"
-  cpu                      = "8192"
-  memory                   = "16384"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  task_role_arn            = module.ecs_task_role.iam_role_arn
-  execution_role_arn       = module.ecs_task_execution_role.iam_role_arn
-  container_definitions    = jsonencode([{
-    name  = "nginx-container"
-    image = "${var.ecr_repository_uri_for_example2}:latest"
-    portMappings = [
-      {
-        containerPort = 80,
-        hostPort      = 80,
-      },
-    ]
-    # ... (other container settings) ...
-  }])
-}
-
-resource "aws_ecs_service" "example2" {
-  name                              = "example2"
-  cluster                           = aws_ecs_cluster.example.arn
-  task_definition                   = aws_ecs_task_definition.example2.arn
-  desired_count                     = 1
-  launch_type                       = "FARGATE"
-  platform_version                  = "1.4.0"
-  health_check_grace_period_seconds = 60
-
-  network_configuration {
-    assign_public_ip = false
-    security_groups  = [aws_security_group.nginx.id]
-
-    subnets = module.vpc.private_subnets
-  }
-
-  service_registries {
-    registry_arn = aws_service_discovery_service.example2.arn
   }
 
   load_balancer {
@@ -410,18 +307,10 @@ output "ecs_service_examplegw_name" {
 }
 
 output "ecs_service_example1_name" {
-  value = aws_ecs_service.example1.name
+  value = aws_appmesh_virtual_node.example1.name
 }
 
 output "ecs_service_example2_name" {
-  value = aws_ecs_service.example2.name
-}
-
-# Move data "template_file" block to the end
-data "template_file" "container_definition_examplegw" {
-  template = file("./container_definitions/examplegw.tpl")
-  vars = {
-    appmesh_virtual_node_name = "mesh/${aws_appmesh_mesh.example.name}/virtualGateway/${aws_appmesh_virtual_gateway.example.name}"
-  }
+  value = aws_appmesh_virtual_node.example2.name
 }
 
