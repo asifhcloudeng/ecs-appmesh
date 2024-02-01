@@ -1,11 +1,11 @@
 #!/bin/bash
 
 REGION=ap-northeast-1
-ACCOUNT_ID=967866550848
+ACCOUNT_ID=381492111475
 ACCESS_KEY=AKIA6CWKXRJACN5BP46J
 SECRET_KEY=PamV6jEv5zwsDkSb1PQDIBDtmKNGzQlYWswBdJsx
 COMMIT_HASH=default
-ECS_SERVICE_ARN=arn:aws:ecs:ap-northeast-1:967866550848:cluster/example
+ECS_SERVICE_ARN=arn:aws:ecs:ap-northeast-1:381492111475:cluster/example
 
 # Define an array of task definitions
 TASK_DEFINITIONS=("examplegw:1" "example2:1" "example1:1")

@@ -50,14 +50,20 @@ resource "aws_ecs_task_definition" "examplegw" {
   container_definitions    = jsonencode([{
     name  = "nginx-container"
     image = var.nginx_image
-    portMappings = [
-      {
-        containerPort = 80,
-        hostPort      = 80,
-      },
-    ]
     # ... (other container settings) ...
   }])
+
+  proxy_configuration {
+    type           = "APPMESH"
+    container_name = "envoy"
+    properties = {
+      AppPorts         = 80
+      EgressIgnoredIPs = "169.254.170.2,169.254.169.254"
+      IgnoredUID       = "1337"
+      ProxyEgressPort  = 15001
+      ProxyIngressPort = 15000
+    }
+  }
 }
 
 resource "aws_ecs_service" "examplegw" {
@@ -82,8 +88,8 @@ resource "aws_ecs_service" "examplegw" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.example.arn
-    container_name   = "nginx-container"
-    container_port   = 80
+    container_name   = "envoy"
+    container_port   = 9080
   }
 }
 
@@ -272,13 +278,6 @@ resource "aws_appmesh_virtual_node" "example_backend" {
         unhealthy_threshold = 2
         timeout_millis      = 2000
         interval_millis     = 5000
-      }
-    }
-
-    service_discovery {
-      aws_cloud_map {
-        namespace_name = aws_service_discovery_private_dns_namespace.example.name
-        service_name   = "example-backend"  # Update with the correct service name
       }
     }
 
