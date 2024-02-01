@@ -291,25 +291,3 @@ resource "aws_appmesh_virtual_node" "example_backend" {
   }
 }
 
-# CloudWatch Alarms for ECS Metrics
-resource "aws_sns_topic" "ecs_alerts" {
-  name = "ecs-alerts"
-}
-
-# Outputs
-output "ecs_cluster_example_name" {
-  value = aws_ecs_cluster.example.name
-}
-
-output "ecs_service_examplegw_name" {
-  value = aws_ecs_service.examplegw.name
-}
-
-output "ecs_service_example1_name" {
-  value = aws_appmesh_virtual_node.example1.name
-}
-
-output "ecs_service_example2_name" {
-  value = aws_appmesh_virtual_node.example2.name
-}
-
